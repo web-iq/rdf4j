@@ -1,4 +1,4 @@
-package org.eclipse.rdf4j.query.algebra.evaluation.iterator;
+package org.eclipse.rdf4j.query.algebra.evaluation.impl.evaluationsteps;
 
 import org.eclipse.rdf4j.common.iteration.CloseableIteration;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -14,12 +14,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class LeftJoinPreFilterQueryEvaluationStepTest {
+class PreFilterQueryEvaluationStepTest {
 
     private static final ValueFactory VALUE_FACTORY = SimpleValueFactory.getInstance();
 
@@ -35,7 +34,9 @@ class LeftJoinPreFilterQueryEvaluationStepTest {
     @DisplayName("when condition evaluates to false, then don't evaluate wrapped")
     void skipWrappedEvaluation() {
         var wrapped = new TestQueryEvaluationStep();
-        QueryEvaluationStep preFilter = createPreFilter(wrapped, bindings -> BooleanLiteral.valueOf(false));
+        QueryEvaluationStep preFilter = new PreFilterQueryEvaluationStep(
+                wrapped,
+                bindings -> BooleanLiteral.valueOf(false));
 
         try (var ignored = preFilter.evaluate(bindingSet)) {
             assertThat(wrapped.isEvaluated).isFalse();
@@ -46,7 +47,9 @@ class LeftJoinPreFilterQueryEvaluationStepTest {
     @DisplayName("when condition evaluates to false, then return empty iteration")
     void returnOnlyInput() {
         var wrapped = new TestQueryEvaluationStep();
-        QueryEvaluationStep preFilter = createPreFilter(wrapped, bindings -> BooleanLiteral.valueOf(false));
+        QueryEvaluationStep preFilter = new PreFilterQueryEvaluationStep(
+                wrapped,
+                bindings -> BooleanLiteral.valueOf(false));
 
         var result = preFilter.evaluate(bindingSet);
 
@@ -57,7 +60,9 @@ class LeftJoinPreFilterQueryEvaluationStepTest {
     @DisplayName("when condition evaluates to true, then evaluate and return wrapped output")
     void evaluateWrapped() {
         var wrapped = new TestQueryEvaluationStep();
-        QueryEvaluationStep preFilter = createPreFilter(wrapped, bindings -> BooleanLiteral.valueOf(true));
+        QueryEvaluationStep preFilter = new PreFilterQueryEvaluationStep(
+                wrapped,
+                bindings1 -> BooleanLiteral.valueOf(true));
 
         var result = preFilter.evaluate(bindingSet);
 
@@ -75,16 +80,12 @@ class LeftJoinPreFilterQueryEvaluationStepTest {
             evaluations.incrementAndGet();
             return BooleanLiteral.valueOf(true);
         };
-        QueryEvaluationStep preFilter = createPreFilter(new TestQueryEvaluationStep(), condition);
+        TestQueryEvaluationStep wrapped = new TestQueryEvaluationStep();
+        QueryEvaluationStep preFilter = new PreFilterQueryEvaluationStep(wrapped, condition);
 
         try (var ignored = preFilter.evaluate(bindingSet)) {
             assertThat(evaluations).hasValue(1);
         }
-    }
-
-    private QueryEvaluationStep createPreFilter(TestQueryEvaluationStep wrapped, QueryValueEvaluationStep condition) {
-        var evaluator = new ScopeBindingsJoinConditionEvaluator(Set.of("a", "b"), condition);
-        return new LeftJoinPreFilterQueryEvaluationStep(wrapped, evaluator);
     }
 
     private static class TestQueryEvaluationStep implements QueryEvaluationStep {

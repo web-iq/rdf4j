@@ -1,19 +1,22 @@
-package org.eclipse.rdf4j.query.algebra.evaluation.iterator;
+package org.eclipse.rdf4j.query.algebra.evaluation.impl.evaluationsteps;
 
 import org.eclipse.rdf4j.common.iteration.CloseableIteration;
 import org.eclipse.rdf4j.common.iteration.FilterIteration;
 import org.eclipse.rdf4j.query.BindingSet;
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryEvaluationStep;
+import org.eclipse.rdf4j.query.algebra.evaluation.QueryValueEvaluationStep;
 
-public class LeftJoinPostFilterQueryEvaluationStep implements QueryEvaluationStep {
+import java.util.function.Predicate;
+
+public class PostFilterQueryEvaluationStep implements QueryEvaluationStep {
 
     private final QueryEvaluationStep wrapped;
-	private final ScopeBindingsJoinConditionEvaluator joinConditionEvaluator;
+	private final Predicate<BindingSet> condition;
 
-    public LeftJoinPostFilterQueryEvaluationStep(QueryEvaluationStep wrapped,
-                                                 ScopeBindingsJoinConditionEvaluator joinConditionEvaluator) {
+    public PostFilterQueryEvaluationStep(QueryEvaluationStep wrapped,
+										 QueryValueEvaluationStep condition) {
 		this.wrapped = wrapped;
-        this.joinConditionEvaluator = joinConditionEvaluator;
+        this.condition = condition.asPredicate();
     }
 
 	@Override
@@ -28,12 +31,12 @@ public class LeftJoinPostFilterQueryEvaluationStep implements QueryEvaluationSte
 
 			@Override
 			protected boolean accept(BindingSet bindings) {
-				return joinConditionEvaluator.evaluate(bindings);
+				return condition.test(bindings);
 			}
 
 			@Override
 			protected void handleClose() {
-				rightIteration.close();
+				// Nothing to close
 			}
 		};
 	}

@@ -1,4 +1,4 @@
-package org.eclipse.rdf4j.query.algebra.evaluation.iterator;
+package org.eclipse.rdf4j.query.algebra.evaluation.impl.evaluationsteps;
 
 import org.eclipse.rdf4j.common.iteration.CloseableIteration;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -14,11 +14,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class LeftJoinPostFilterQueryEvaluationStepTest {
+class PostFilterQueryEvaluationStepTest {
 
     private static final ValueFactory VALUE_FACTORY = SimpleValueFactory.getInstance();
 
@@ -34,7 +33,9 @@ class LeftJoinPostFilterQueryEvaluationStepTest {
     @DisplayName("when wrapped returns empty iteration, then LeftJoinPostFilterQueryEvaluationStep returns empty iteration")
     void emptyIteration() {
         QueryEvaluationStep wrapped = (bindings) -> QueryEvaluationStep.EMPTY_ITERATION;
-        QueryEvaluationStep postFilter = createPostFilter(wrapped, bindings -> BooleanLiteral.valueOf(true));
+        QueryEvaluationStep postFilter = new PostFilterQueryEvaluationStep(
+                wrapped,
+                bindings -> BooleanLiteral.valueOf(true));
 
         var result = postFilter.evaluate(bindingSet);
 
@@ -51,7 +52,7 @@ class LeftJoinPostFilterQueryEvaluationStepTest {
                     .equals("abc");
             return BooleanLiteral.valueOf(shouldAccept);
         };
-        QueryEvaluationStep postFilter = createPostFilter(wrapped, condition);
+        QueryEvaluationStep postFilter = new PostFilterQueryEvaluationStep(wrapped, condition);
 
         var result = postFilter.evaluate(bindingSet);
 
@@ -59,11 +60,6 @@ class LeftJoinPostFilterQueryEvaluationStepTest {
                 .toIterable()
                 .map(bindings -> bindings.getValue("b"))
                 .containsExactly(VALUE_FACTORY.createLiteral("abc"));
-    }
-
-    private QueryEvaluationStep createPostFilter(QueryEvaluationStep wrapped, QueryValueEvaluationStep condition) {
-        var evaluator = new ScopeBindingsJoinConditionEvaluator(Set.of("a", "b"), condition);
-        return new LeftJoinPostFilterQueryEvaluationStep(wrapped, evaluator);
     }
 
     private static class TestQueryEvaluationStep implements QueryEvaluationStep {
