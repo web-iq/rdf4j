@@ -20,6 +20,7 @@ import org.eclipse.rdf4j.query.algebra.evaluation.EvaluationStrategy;
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryEvaluationStep;
 import org.eclipse.rdf4j.query.algebra.evaluation.QueryValueEvaluationStep;
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.QueryEvaluationContext;
+import org.eclipse.rdf4j.query.algebra.evaluation.impl.evaluationsteps.values.ScopedQueryValueEvaluationStep;
 import org.eclipse.rdf4j.query.algebra.evaluation.iterator.*;
 import org.eclipse.rdf4j.query.algebra.helpers.TupleExprs;
 import org.eclipse.rdf4j.query.algebra.helpers.collectors.VarNameCollector;
@@ -125,13 +126,13 @@ public final class LeftJoinQueryEvaluationStep implements QueryEvaluationStep {
 		if (joinCondition == null) {
 			return prepareRightArg;
 		} else if (canEvaluateConditionBasedOnLeftHandSide(join)) {
-			return new LeftJoinPreFilterQueryEvaluationStep(
+			return new PreFilterQueryEvaluationStep(
 					prepareRightArg,
-					new ScopeBindingsJoinConditionEvaluator(join.getAssuredBindingNames(), joinCondition));
+					new ScopedQueryValueEvaluationStep(join.getAssuredBindingNames(), joinCondition));
 		} else {
-			return new LeftJoinPostFilterQueryEvaluationStep(
+			return new PostFilterQueryEvaluationStep(
 					prepareRightArg,
-					new ScopeBindingsJoinConditionEvaluator(scopeBindingNames, joinCondition));
+					new ScopedQueryValueEvaluationStep(scopeBindingNames, joinCondition));
 		}
 	}
 
